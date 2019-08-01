@@ -1,0 +1,83 @@
+#!/bin/bash
+
+
+function bash_pulljob() {
+
+
+# pull job and run this path contains all the IP addresses split up into file based 'jobs'
+# be sure to replace administrator with what ever common username you like to use that has ssh keys installed
+# be sure to allow nmap to be run as sudo from that user
+# Project title OMG_Tyler (@_arch3y) was renamed to LameDNMAP
+for file in ./JOBS/* ; do mv  -- "$file" ./RUNNING/ ; break ; done
+
+
+echo -e "\e[32m=============================\e[0m"
+echo -e "\e[32m$1 Nmap Starting on $file \e[0m"
+
+
+
+scp ./RUNNING/* administrator@"$1":~/
+
+rm -Rf ./RUNNING/*
+
+# start nmap on $1
+
+# added --open to reduce file size 
+ssh administrator@"$1" "sudo nmap --script http-title --open -p21,22,23,25,53,80,88,110,111,113,135,139,143,220,264,389,443,445,449,524,585,636,993,995,1433,1521,1723,3306,3389,5900,8080 -sV --exclude-ports 9100-9107 --max-retries 1 --min-rtt-timeout 100ms --max-rtt-timeout 3000ms --initial-rtt-timeout 500ms --defeat-rst-ratelimit --min-rate 4000 --max-rate 15000 -oA ${file:0,-7}_${i}_$(date -d "today" +"%Y%m%d%H%M%S") -iL BATCH_* " &
+
+
+# EWAY TO SLOW ssh administrator@"$1" "sudo nmap -T3 -sV -sC --exclude-ports 9100-9107 -vv -oA $i$(date -d "today" +"%Y%m%d%H%M%S") -iL BATCH_* " &
+
+sleep 1
+# remove input file 
+ssh administrator@"$1" "rm BATCH_*"
+}
+
+#############################################################
+
+while true 
+do
+
+
+[ "$(ls -A ./JOBS/)" ] && echo "We Have Jobs" || break
+
+
+
+# hosts that you want nmap scans to be done from
+for i in `echo localhost rapid7scan1.COMPANY.com rapid7scan2.COMPANY.com rapid7scan4.COMPANY.com rapid7scan5.COMPANY.com rapid7scan6.COMPANY.com rapid7scan7.COMPANY.com rapid7scan8.COMPANY.com`
+
+do
+
+# check if nmap is not running
+varisnmap=`ssh administrator@"$i" "pgrep -l nmap || echo nmap  NOT running"`
+
+if [[ "$varisnmap" == *NOT* ]]
+then
+
+# break if job empty
+[ "$(ls -A ./JOBS/)" ] && echo "We Have Jobs" || break
+
+
+bash_pulljob $i
+else
+echo -e "\e[31m=============================\e[0m"
+echo -e "\e[31m$i Nmap Still Running on \e[0m"
+fi
+done
+
+
+echo -e "\e[31m=============================\e[0m"
+echo -e "\e[31m$i Everything is likly busy ... sleeping for 10min \e[0m"
+sleep 60
+sleep 60
+sleep 60
+sleep 60
+sleep 60
+sleep 60
+sleep 60
+sleep 60
+sleep 60
+sleep 60
+
+
+done
